@@ -1,0 +1,1200 @@
+
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local Lighting = game:GetService("Lighting")
+
+local player = Players.LocalPlayer
+
+local ACCENT       = Color3.fromRGB(230, 60, 80)
+local HEADER_BG    = Color3.fromRGB(16, 16, 18)
+local BG           = Color3.fromRGB(12, 12, 14)
+local PANEL        = Color3.fromRGB(16, 16, 18)
+local ELEMENT      = Color3.fromRGB(22, 22, 25)
+local TRACK_OFF    = Color3.fromRGB(40, 40, 45)
+local KNOB         = Color3.fromRGB(230, 230, 235)
+local TEXT         = Color3.fromRGB(235, 235, 240)
+local TEXT_DIM     = Color3.fromRGB(140, 140, 150)
+local POPUP_BG     = Color3.fromRGB(18, 18, 21)
+
+local gui = Instance.new("ScreenGui")
+gui.Name = "FatalityUI"
+gui.ResetOnSpawn = false
+gui.IgnoreGuiInset = true
+gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+gui.Parent = player:WaitForChild("PlayerGui")
+
+local blur = Instance.new("BlurEffect")
+blur.Size = 8
+blur.Name = "Fatality_Blur"
+blur.Parent = Lighting
+
+local main = Instance.new("Frame")
+main.Name = "Main"
+main.Size = UDim2.new(0, 660, 0, 440)
+main.Position = UDim2.new(0.5, -330, 0.5, -220)
+main.BackgroundColor3 = BG
+main.BackgroundTransparency = 0.05
+main.BorderSizePixel = 0
+main.Active = true
+main.Parent = gui
+main.ZIndex = 2
+
+local mainStroke = Instance.new("UIStroke")
+mainStroke.Color = ACCENT
+mainStroke.Thickness = 1
+mainStroke.Transparency = 0.5
+mainStroke.Parent = main
+
+local header = Instance.new("Frame")
+header.Name = "Header"
+header.Size = UDim2.new(1, 0, 0, 34)
+header.BackgroundColor3 = HEADER_BG
+header.BorderSizePixel = 0
+header.ZIndex = 3
+header.Parent = main
+
+local headerLine = Instance.new("Frame")
+headerLine.Size = UDim2.new(1, 0, 0, 1)
+headerLine.Position = UDim2.new(0, 0, 1, -1)
+headerLine.BackgroundColor3 = ACCENT
+headerLine.BorderSizePixel = 0
+headerLine.ZIndex = 4
+headerLine.Parent = header
+
+local accentLetter = Instance.new("TextLabel")
+accentLetter.Text = "F"
+accentLetter.Font = Enum.Font.GothamBold
+accentLetter.TextSize = 15
+accentLetter.TextColor3 = ACCENT
+accentLetter.BackgroundTransparency = 1
+accentLetter.Position = UDim2.new(0, 14, 0, 0)
+accentLetter.Size = UDim2.new(0, 14, 1, 0)
+accentLetter.TextXAlignment = Enum.TextXAlignment.Left
+accentLetter.ZIndex = 5
+accentLetter.Parent = header
+
+local title = Instance.new("TextLabel")
+title.Text = "ATALITY"
+title.Font = Enum.Font.GothamBold
+title.TextSize = 15
+title.TextColor3 = TEXT
+title.BackgroundTransparency = 1
+title.Position = UDim2.new(0, 24, 0, 0)
+title.Size = UDim2.new(0, 200, 1, 0)
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.ZIndex = 4
+title.Parent = header
+
+local tabsBar = Instance.new("Frame")
+tabsBar.Name = "TabsBar"
+tabsBar.Size = UDim2.new(1, 0, 0, 32)
+tabsBar.Position = UDim2.new(0, 0, 0, 34)
+tabsBar.BackgroundColor3 = HEADER_BG
+tabsBar.BorderSizePixel = 0
+tabsBar.ZIndex = 3
+tabsBar.Parent = main
+
+local tabsBarLine = Instance.new("Frame")
+tabsBarLine.Size = UDim2.new(1, 0, 0, 1)
+tabsBarLine.Position = UDim2.new(0, 0, 1, -1)
+tabsBarLine.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
+tabsBarLine.BorderSizePixel = 0
+tabsBarLine.ZIndex = 4
+tabsBarLine.Parent = tabsBar
+
+local content = Instance.new("Frame")
+content.Name = "Content"
+content.Size = UDim2.new(1, -16, 1, -82)
+content.Position = UDim2.new(0, 8, 0, 72)
+content.BackgroundTransparency = 1
+content.BorderSizePixel = 0
+content.ZIndex = 3
+content.Parent = main
+
+local Popups = {}
+local function closeAllPopups()
+	for _, p in ipairs(Popups) do
+		if p and p.Parent then
+			p.Visible = false
+		end
+	end
+end
+
+local Tabs = {}
+local activeTab = nil
+
+local function createTab(name)
+	local tabIndex = 0
+	for _ in pairs(Tabs) do tabIndex = tabIndex + 1 end
+
+	local btn = Instance.new("TextButton")
+	btn.Size = UDim2.new(0, 80, 1, 0)
+	btn.Position = UDim2.new(0, tabIndex * 80 + 8, 0, 0)
+	btn.BackgroundColor3 = HEADER_BG
+	btn.BackgroundTransparency = 1
+	btn.BorderSizePixel = 0
+	btn.Text = ""
+	btn.AutoButtonColor = false
+	btn.ZIndex = 4
+	btn.Parent = tabsBar
+
+	local label = Instance.new("TextLabel")
+	label.Text = name
+	label.Font = Enum.Font.GothamMedium
+	label.TextSize = 12
+	label.TextColor3 = TEXT_DIM
+	label.BackgroundTransparency = 1
+	label.Size = UDim2.new(1, 0, 1, 0)
+	label.TextXAlignment = Enum.TextXAlignment.Center
+	label.ZIndex = 5
+	label.Parent = btn
+
+	local underline = Instance.new("Frame")
+	underline.Size = UDim2.new(1, 0, 0, 2)
+	underline.Position = UDim2.new(0, 0, 1, -2)
+	underline.BackgroundColor3 = ACCENT
+	underline.BorderSizePixel = 0
+	underline.BackgroundTransparency = 1
+	underline.ZIndex = 5
+	underline.Parent = btn
+
+	local page = Instance.new("Frame")
+	page.Size = UDim2.new(1, 0, 1, 0)
+	page.BackgroundTransparency = 1
+	page.Visible = false
+	page.ZIndex = 4
+	page.Parent = content
+
+	local colLeft = Instance.new("ScrollingFrame")
+	colLeft.Size = UDim2.new(0.5, -4, 1, 0)
+	colLeft.Position = UDim2.new(0, 0, 0, 0)
+	colLeft.BackgroundTransparency = 1
+	colLeft.BorderSizePixel = 0
+	colLeft.ScrollBarThickness = 3
+	colLeft.ScrollBarImageColor3 = ACCENT
+	colLeft.CanvasSize = UDim2.new(0, 0, 0, 0)
+	colLeft.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	colLeft.ScrollingDirection = Enum.ScrollingDirection.Y
+	colLeft.ZIndex = 4
+	colLeft.Parent = page
+
+	local colLeftLayout = Instance.new("UIListLayout")
+	colLeftLayout.Padding = UDim.new(0, 6)
+	colLeftLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	colLeftLayout.Parent = colLeft
+
+	local colLeftPad = Instance.new("UIPadding")
+	colLeftPad.PaddingBottom = UDim.new(0, 12)
+	colLeftPad.PaddingRight = UDim.new(0, 6)
+	colLeftPad.Parent = colLeft
+
+	local colRight = Instance.new("ScrollingFrame")
+	colRight.Size = UDim2.new(0.5, -4, 1, 0)
+	colRight.Position = UDim2.new(0.5, 4, 0, 0)
+	colRight.BackgroundTransparency = 1
+	colRight.BorderSizePixel = 0
+	colRight.ScrollBarThickness = 3
+	colRight.ScrollBarImageColor3 = ACCENT
+	colRight.CanvasSize = UDim2.new(0, 0, 0, 0)
+	colRight.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	colRight.ScrollingDirection = Enum.ScrollingDirection.Y
+	colRight.ZIndex = 4
+	colRight.Parent = page
+
+	local colRightLayout = Instance.new("UIListLayout")
+	colRightLayout.Padding = UDim.new(0, 6)
+	colRightLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	colRightLayout.Parent = colRight
+
+	local colRightPad = Instance.new("UIPadding")
+	colRightPad.PaddingBottom = UDim.new(0, 12)
+	colRightPad.PaddingRight = UDim.new(0, 6)
+	colRightPad.Parent = colRight
+
+	local tab = {button = btn, label = label, underline = underline, page = page, left = colLeft, right = colRight}
+
+	btn.MouseEnter:Connect(function()
+		if activeTab ~= tab then
+			TweenService:Create(label, TweenInfo.new(0.15), {TextColor3 = TEXT}):Play()
+		end
+	end)
+
+	btn.MouseLeave:Connect(function()
+		if activeTab ~= tab then
+			TweenService:Create(label, TweenInfo.new(0.15), {TextColor3 = TEXT_DIM}):Play()
+		end
+	end)
+
+	btn.MouseButton1Click:Connect(function()
+		closeAllPopups()
+		if activeTab then
+			activeTab.page.Visible = false
+			TweenService:Create(activeTab.label, TweenInfo.new(0.15), {TextColor3 = TEXT_DIM}):Play()
+			TweenService:Create(activeTab.underline, TweenInfo.new(0.15), {BackgroundTransparency = 1}):Play()
+		end
+		activeTab = tab
+		page.Visible = true
+		TweenService:Create(label, TweenInfo.new(0.15), {TextColor3 = TEXT}):Play()
+		TweenService:Create(underline, TweenInfo.new(0.15), {BackgroundTransparency = 0}):Play()
+	end)
+
+	Tabs[name] = tab
+	return tab
+end
+
+local function createCheckbox(parent, text, default)
+	local row = Instance.new("Frame")
+	row.Size = UDim2.new(1, 0, 0, 22)
+	row.BackgroundTransparency = 1
+	row.ZIndex = 5
+	row.Parent = parent
+
+	local label = Instance.new("TextLabel")
+	label.Text = text
+	label.Font = Enum.Font.Gotham
+	label.TextSize = 12
+	label.TextColor3 = TEXT
+	label.BackgroundTransparency = 1
+	label.Size = UDim2.new(1, -30, 1, 0)
+	label.TextXAlignment = Enum.TextXAlignment.Left
+	label.ZIndex = 6
+	label.Parent = row
+
+	local box = Instance.new("TextButton")
+	box.Size = UDim2.new(0, 14, 0, 14)
+	box.Position = UDim2.new(1, -14, 0.5, -7)
+	box.BackgroundColor3 = Color3.fromRGB(20, 20, 22)
+	box.BorderSizePixel = 0
+	box.Text = ""
+	box.AutoButtonColor = false
+	box.ZIndex = 6
+	box.Parent = row
+
+	local boxStroke = Instance.new("UIStroke")
+	boxStroke.Color = Color3.fromRGB(60, 60, 65)
+	boxStroke.Thickness = 1
+	boxStroke.Parent = box
+
+	local check = Instance.new("TextLabel")
+	check.Text = "✓"
+	check.Font = Enum.Font.GothamBold
+	check.TextSize = 11
+	check.TextColor3 = Color3.fromRGB(255, 255, 255)
+	check.BackgroundTransparency = 1
+	check.Size = UDim2.new(1, 0, 1, 0)
+	check.TextXAlignment = Enum.TextXAlignment.Center
+	check.TextYAlignment = Enum.TextYAlignment.Center
+	check.TextTransparency = 1
+	check.ZIndex = 7
+	check.Parent = box
+
+	local state = default or false
+
+	local function apply(animate)
+		if state then
+			box.BackgroundColor3 = ACCENT
+			boxStroke.Color = ACCENT
+			if animate then
+				check.TextTransparency = 1
+				TweenService:Create(check, TweenInfo.new(0.15), {TextTransparency = 0}):Play()
+			else
+				check.TextTransparency = 0
+			end
+		else
+			box.BackgroundColor3 = Color3.fromRGB(20, 20, 22)
+			boxStroke.Color = Color3.fromRGB(60, 60, 65)
+			if animate then
+				TweenService:Create(check, TweenInfo.new(0.15), {TextTransparency = 1}):Play()
+			else
+				check.TextTransparency = 1
+			end
+		end
+	end
+
+	apply(false)
+
+	box.MouseButton1Click:Connect(function()
+		state = not state
+		apply(true)
+	end)
+
+	return row
+end
+
+local function createSlider(parent, text, default, minV, maxV)
+	minV = minV or 0
+	maxV = maxV or 100
+	default = default or minV
+
+	local row = Instance.new("Frame")
+	row.Size = UDim2.new(1, 0, 0, 34)
+	row.BackgroundTransparency = 1
+	row.ZIndex = 5
+	row.Parent = parent
+
+	local label = Instance.new("TextLabel")
+	label.Text = text
+	label.Font = Enum.Font.Gotham
+	label.TextSize = 12
+	label.TextColor3 = TEXT
+	label.BackgroundTransparency = 1
+	label.Size = UDim2.new(0.7, 0, 0, 16)
+	label.TextXAlignment = Enum.TextXAlignment.Left
+	label.ZIndex = 6
+	label.Parent = row
+
+	local valueLabel = Instance.new("TextLabel")
+	valueLabel.Text = tostring(default)
+	valueLabel.Font = Enum.Font.Gotham
+	valueLabel.TextSize = 12
+	valueLabel.TextColor3 = ACCENT
+	valueLabel.BackgroundTransparency = 1
+	valueLabel.Size = UDim2.new(0.3, 0, 0, 16)
+	valueLabel.Position = UDim2.new(0.7, 0, 0, 0)
+	valueLabel.TextXAlignment = Enum.TextXAlignment.Right
+	valueLabel.ZIndex = 6
+	valueLabel.Parent = row
+
+	local bar = Instance.new("Frame")
+	bar.Size = UDim2.new(1, 0, 0, 3)
+	bar.Position = UDim2.new(0, 0, 0, 24)
+	bar.BackgroundColor3 = ELEMENT
+	bar.BorderSizePixel = 0
+	bar.ZIndex = 6
+	bar.Parent = row
+
+	local fill = Instance.new("Frame")
+	fill.Size = UDim2.new((default - minV) / (maxV - minV), 0, 1, 0)
+	fill.BackgroundColor3 = ACCENT
+	fill.BorderSizePixel = 0
+	fill.ZIndex = 7
+	fill.Parent = bar
+
+	local knob = Instance.new("Frame")
+	knob.Size = UDim2.new(0, 10, 0, 10)
+	knob.Position = UDim2.new((default - minV) / (maxV - minV), -5, 0.5, -5)
+	knob.BackgroundColor3 = Color3.fromRGB(235, 235, 240)
+	knob.BorderSizePixel = 0
+	knob.ZIndex = 8
+	knob.Parent = bar
+
+	local dragging = false
+
+	local function updateFromX(x)
+		local rel = math.clamp((x - bar.AbsolutePosition.X) / bar.AbsoluteSize.X, 0, 1)
+		local val = math.floor(minV + (maxV - minV) * rel + 0.5)
+		valueLabel.Text = tostring(val)
+		fill.Size = UDim2.new(rel, 0, 1, 0)
+		knob.Position = UDim2.new(rel, -5, 0.5, -5)
+	end
+
+	bar.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1
+			or input.UserInputType == Enum.UserInputType.Touch then
+			dragging = true
+			updateFromX(input.Position.X)
+		end
+	end)
+
+	UserInputService.InputChanged:Connect(function(input)
+		if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement
+			or input.UserInputType == Enum.UserInputType.Touch) then
+			updateFromX(input.Position.X)
+		end
+	end)
+
+	UserInputService.InputEnded:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1
+			or input.UserInputType == Enum.UserInputType.Touch then
+			dragging = false
+		end
+	end)
+
+	return row
+end
+
+local function createDropdown(parent, text, options, defaultIndex)
+	options = options or {"Option 1", "Option 2"}
+	defaultIndex = defaultIndex or 1
+
+	local wrapper = Instance.new("Frame")
+	wrapper.Size = UDim2.new(1, 0, 0, 22)
+	wrapper.BackgroundTransparency = 1
+	wrapper.ClipsDescendants = false
+	wrapper.ZIndex = 6
+	wrapper.Parent = parent
+
+	local label = Instance.new("TextLabel")
+	label.Text = text
+	label.Font = Enum.Font.Gotham
+	label.TextSize = 12
+	label.TextColor3 = TEXT
+	label.BackgroundTransparency = 1
+	label.Size = UDim2.new(1, -100, 1, 0)
+	label.TextXAlignment = Enum.TextXAlignment.Left
+	label.ZIndex = 7
+	label.Parent = wrapper
+
+	local box = Instance.new("TextButton")
+	box.Size = UDim2.new(0, 90, 0, 20)
+	box.Position = UDim2.new(1, -90, 0.5, -10)
+	box.BackgroundColor3 = Color3.fromRGB(20, 20, 22)
+	box.BorderSizePixel = 0
+	box.Text = ""
+	box.AutoButtonColor = false
+	box.ZIndex = 7
+	box.Parent = wrapper
+
+	local boxStroke = Instance.new("UIStroke")
+	boxStroke.Color = Color3.fromRGB(45, 45, 50)
+	boxStroke.Thickness = 1
+	boxStroke.Parent = box
+
+	local boxLabel = Instance.new("TextLabel")
+	boxLabel.Text = options[defaultIndex]
+	boxLabel.Font = Enum.Font.Gotham
+	boxLabel.TextSize = 11
+	boxLabel.TextColor3 = TEXT
+	boxLabel.BackgroundTransparency = 1
+	boxLabel.Size = UDim2.new(1, -16, 1, 0)
+	boxLabel.Position = UDim2.new(0, 6, 0, 0)
+	boxLabel.TextXAlignment = Enum.TextXAlignment.Left
+	boxLabel.ZIndex = 8
+	boxLabel.Parent = box
+
+	local arrow = Instance.new("TextLabel")
+	arrow.Text = "v"
+	arrow.Font = Enum.Font.GothamBold
+	arrow.TextSize = 10
+	arrow.TextColor3 = TEXT_DIM
+	arrow.BackgroundTransparency = 1
+	arrow.Size = UDim2.new(0, 14, 1, 0)
+	arrow.Position = UDim2.new(1, -14, 0, 0)
+	arrow.ZIndex = 8
+	arrow.Parent = box
+
+	local list = Instance.new("Frame")
+	list.Size = UDim2.new(0, 90, 0, #options * 20 + 6)
+	list.Position = UDim2.new(1, -90, 1, 2)
+	list.BackgroundColor3 = Color3.fromRGB(18, 18, 21)
+	list.BorderSizePixel = 0
+	list.Visible = false
+	list.ZIndex = 20
+	list.Parent = wrapper
+
+	local listStroke = Instance.new("UIStroke")
+	listStroke.Color = ACCENT
+	listStroke.Thickness = 1
+	listStroke.Transparency = 0.5
+	listStroke.Parent = list
+
+	local listLayout = Instance.new("UIListLayout")
+	listLayout.Padding = UDim.new(0, 0)
+	listLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	listLayout.Parent = list
+
+	local listPad = Instance.new("UIPadding")
+	listPad.PaddingTop = UDim.new(0, 3)
+	listPad.PaddingBottom = UDim.new(0, 3)
+	listPad.Parent = list
+
+	for i, opt in ipairs(options) do
+		local optBtn = Instance.new("TextButton")
+		optBtn.Size = UDim2.new(1, 0, 0, 20)
+		optBtn.BackgroundColor3 = Color3.fromRGB(18, 18, 21)
+		optBtn.BorderSizePixel = 0
+		optBtn.Text = ""
+		optBtn.AutoButtonColor = false
+		optBtn.ZIndex = 21
+		optBtn.Parent = list
+
+		local optLabel = Instance.new("TextLabel")
+		optLabel.Text = opt
+		optLabel.Font = Enum.Font.Gotham
+		optLabel.TextSize = 11
+		optLabel.TextColor3 = TEXT_DIM
+		optLabel.BackgroundTransparency = 1
+		optLabel.Size = UDim2.new(1, -12, 1, 0)
+		optLabel.Position = UDim2.new(0, 6, 0, 0)
+		optLabel.TextXAlignment = Enum.TextXAlignment.Left
+		optLabel.ZIndex = 22
+		optLabel.Parent = optBtn
+
+		optBtn.MouseEnter:Connect(function()
+			optBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+			optLabel.TextColor3 = TEXT
+		end)
+		optBtn.MouseLeave:Connect(function()
+			optBtn.BackgroundColor3 = Color3.fromRGB(18, 18, 21)
+			optLabel.TextColor3 = TEXT_DIM
+		end)
+		optBtn.MouseButton1Click:Connect(function()
+			boxLabel.Text = opt
+			list.Visible = false
+		end)
+	end
+
+	box.MouseButton1Click:Connect(function()
+		local wasOpen = list.Visible
+		closeAllPopups()
+		list.Visible = not wasOpen
+	end)
+
+	table.insert(Popups, list)
+
+	return wrapper
+end
+
+local function createSection(parent, text)
+	local row = Instance.new("Frame")
+	row.Size = UDim2.new(1, 0, 0, 18)
+	row.BackgroundTransparency = 1
+	row.ZIndex = 5
+	row.Parent = parent
+
+	local label = Instance.new("TextLabel")
+	label.Text = text
+	label.Font = Enum.Font.GothamBold
+	label.TextSize = 10
+	label.TextColor3 = TEXT_DIM
+	label.BackgroundTransparency = 1
+	label.Size = UDim2.new(1, 0, 1, 0)
+	label.TextXAlignment = Enum.TextXAlignment.Left
+	label.ZIndex = 6
+	label.Parent = row
+
+	
+	local line = Instance.new("Frame")
+	line.Size = UDim2.new(1, -100, 0, 1)
+	line.Position = UDim2.new(0, 100, 0.5, 0)
+	line.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
+	line.BorderSizePixel = 0
+	line.ZIndex = 6
+	line.Parent = row
+
+	return row
+end
+
+
+local dragging, dragStart, startPos
+header.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1
+		or input.UserInputType == Enum.UserInputType.Touch then
+		dragging = true
+		dragStart = input.Position
+		startPos = main.Position
+		closeAllPopups()
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then dragging = false end
+		end)
+	end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+	if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement
+		or input.UserInputType == Enum.UserInputType.Touch) then
+		local delta = input.Position - dragStart
+		main.Position = UDim2.new(
+			startPos.X.Scale, startPos.X.Offset + delta.X,
+			startPos.Y.Scale, startPos.Y.Offset + delta.Y
+		)
+	end
+end)
+
+
+createTab("RAGE")
+createTab("LEGIT")
+createTab("VISUALS")
+createTab("MISC")
+createTab("CONFIG")
+
+local first = Tabs["RAGE"]
+activeTab = first
+first.page.Visible = true
+first.label.TextColor3 = TEXT
+first.underline.BackgroundTransparency = 0
+
+
+createSection(first.left, "MAIN")
+createCheckbox(first.left, "Enabled", true)
+createCheckbox(first.left, "Silent Aim", true)
+createCheckbox(first.left, "Auto Fire", false)
+createCheckbox(first.left, "Wall Penetration", false)
+createCheckbox(first.left, "Auto Shoot", false)
+createCheckbox(first.left, "Auto Pistol", false)
+createCheckbox(first.left, "Auto Scope", false)
+
+createSection(first.left, "AIM")
+createDropdown(first.left, "Target", {"Crosshair", "Nearest", "Low HP", "Threat"}, 1)
+createDropdown(first.left, "Hitboxes", {"Head", "Chest", "Stomach", "Nearest"}, 2)
+createDropdown(first.left, "Priority", {"Distance", "Health", "Threat", "FOV"}, 1)
+createDropdown(first.left, "Aim Mode", {"Legit", "Rage", "Adaptive"}, 1)
+createSlider(first.left, "Field of View", 60, 1, 180)
+createSlider(first.left, "Hit Chance", 100, 0, 100)
+createSlider(first.left, "Min Damage", 15, 0, 100)
+createSlider(first.left, "Max Damage", 100, 0, 100)
+createSlider(first.left, "Smoothness", 5, 1, 20)
+
+createSection(first.left, "ACCURACY")
+createCheckbox(first.left, "No Spread", false)
+createSlider(first.left, "No Spread Amount", 100, 0, 100)
+createCheckbox(first.left, "No Recoil", false)
+createSlider(first.left, "Recoil Control", 100, 0, 100)
+createCheckbox(first.left, "Perfect Accuracy", false)
+createCheckbox(first.left, "Penetration", false)
+createSlider(first.left, "Penetration Damage", 50, 0, 100)
+
+createSection(first.left, "ANTI-AIM")
+createCheckbox(first.left, "Anti-aim", false)
+createDropdown(first.left, "Pitch", {"Down", "Up", "Jitter", "Zero", "Random"}, 1)
+createDropdown(first.left, "Yaw", {"Backward", "Local View", "At Targets", "Off", "Spin"}, 1)
+createSlider(first.left, "Jitter Amount", 30, 0, 180)
+createSlider(first.left, "Spin Speed", 10, 1, 50)
+
+createSection(first.right, "OTHER")
+createCheckbox(first.right, "Auto Scope", false)
+createCheckbox(first.right, "Quick Peek Assist", false)
+createCheckbox(first.right, "Auto Reload", false)
+createCheckbox(first.right, "Auto Defuse", false)
+createCheckbox(first.right, "Auto Buy", false)
+createCheckbox(first.right, "Auto Revive", false)
+
+createSection(first.right, "BACKTRACK")
+createCheckbox(first.right, "Backtrack", true)
+createSlider(first.right, "Backtrack Time", 200, 0, 400)
+createSlider(first.right, "Backtrack Hitbox", 50, 0, 100)
+
+createSection(first.right, "EXTRAPOLATION")
+createCheckbox(first.right, "Extrapolation", false)
+createSlider(first.right, "Extrapolation X", 8, 0, 16)
+createSlider(first.right, "Extrapolation Y", 8, 0, 16)
+createSlider(first.right, "Extrapolation Z", 8, 0, 16)
+
+createSection(first.right, "TRIGGER")
+createCheckbox(first.right, "Trigger Bot", false)
+createSlider(first.right, "Trigger Delay", 50, 0, 200)
+createSlider(first.right, "Trigger FOV", 3, 1, 15)
+createDropdown(first.right, "Trigger Hitbox", {"Head", "Chest", "Nearest"}, 1)
+createCheckbox(first.right, "Trigger Visible Check", true)
+
+createSection(first.right, "VISUAL")
+createCheckbox(first.right, "Aim Line", false)
+createCheckbox(first.right, "Target Info", false)
+createCheckbox(first.right, "Hit Marker", false)
+createCheckbox(first.right, "Damage Indicator", false)
+createCheckbox(first.right, "Kill Sound", false)
+createCheckbox(first.right, "Hit Log", false)
+
+
+local legit = Tabs["LEGIT"]
+
+createSection(legit.left, "MAIN")
+createCheckbox(legit.left, "Enabled", true)
+createCheckbox(legit.left, "Silent Aim", false)
+createCheckbox(legit.left, "Aim Assist", true)
+createCheckbox(legit.left, "Trigger Bot", false)
+createCheckbox(legit.left, "Auto Fire", false)
+createCheckbox(legit.left, "Auto Pistol", false)
+createCheckbox(legit.left, "Auto Scope", false)
+
+createSection(legit.left, "TARGETING")
+createDropdown(legit.left, "Hitbox", {"Head", "Chest", "Stomach", "Nearest"}, 2)
+createDropdown(legit.left, "Priority", {"Distance", "Low HP", "Threat", "FOV"}, 1)
+createDropdown(legit.left, "Target Mode", {"Single", "Multi", "Adaptive"}, 1)
+createDropdown(legit.left, "Aim Key", {"Right Mouse", "Left Mouse", "Alt", "Always"}, 1)
+createSlider(legit.left, "FOV", 3, 1, 15)
+createSlider(legit.left, "Smoothness", 5, 1, 20)
+createSlider(legit.left, "Hit Chance", 100, 0, 100)
+createSlider(legit.left, "Min Damage", 15, 0, 100)
+
+createSection(legit.left, "HUMANIZER")
+createCheckbox(legit.left, "Humanizer", true)
+createSlider(legit.left, "Humanizer Amount", 30, 0, 100)
+createSlider(legit.left, "Micro Movements", 20, 0, 100)
+createSlider(legit.left, "Reaction Time", 150, 0, 500)
+createCheckbox(legit.left, "Miss Shots", false)
+createSlider(legit.left, "Miss Chance", 10, 0, 100)
+
+createSection(legit.right, "RCS")
+createCheckbox(legit.right, "RCS Control", true)
+createSlider(legit.right, "RCS Amount", 100, 0, 100)
+createSlider(legit.right, "RCS X", 100, 0, 100)
+createSlider(legit.right, "RCS Y", 100, 0, 100)
+createDropdown(legit.right, "RCS Mode", {"Static", "Dynamic", "Adaptive"}, 1)
+
+createSection(legit.right, "TRIGGER BOT")
+createCheckbox(legit.right, "Trigger Enabled", false)
+createSlider(legit.right, "Trigger Delay", 50, 0, 200)
+createSlider(legit.right, "Trigger FOV", 3, 1, 15)
+createDropdown(legit.right, "Trigger Hitbox", {"Head", "Chest", "Nearest"}, 1)
+createCheckbox(legit.right, "Trigger Visible Check", true)
+createCheckbox(legit.right, "Trigger On Key", true)
+createCheckbox(legit.right, "Trigger Ignore Friends", true)
+
+createSection(legit.right, "AUTO")
+createCheckbox(legit.right, "Auto Reload", false)
+createCheckbox(legit.right, "Auto Buy", false)
+createCheckbox(legit.right, "Auto Defuse", false)
+createCheckbox(legit.right, "Auto Peek", false)
+createCheckbox(legit.right, "Quick Stop", false)
+createSlider(legit.right, "Auto Peek Distance", 100, 10, 500)
+
+createSection(legit.right, "FILTERS")
+createCheckbox(legit.right, "Ignore Friends", true)
+createCheckbox(legit.right, "Ignore Teammates", true)
+createCheckbox(legit.right, "Ignore Dead", true)
+createCheckbox(legit.right, "Visible Check", true)
+createCheckbox(legit.right, "FOV Check", true)
+createCheckbox(legit.right, "Wallbang Check", false)
+createCheckbox(legit.right, "Smoke Check", false)
+
+
+local vis = Tabs["VISUALS"]
+
+createSection(vis.left, "PLAYER ESP")
+createCheckbox(vis.left, "Box ESP", true)
+createCheckbox(vis.left, "Name ESP", true)
+createCheckbox(vis.left, "Health Bar", false)
+createCheckbox(vis.left, "Armor Bar", false)
+createCheckbox(vis.left, "Distance", false)
+createCheckbox(vis.left, "Weapon ESP", false)
+createCheckbox(vis.left, "Skeleton", false)
+createCheckbox(vis.left, "Head Dot", false)
+createDropdown(vis.left, "Box Style", {"2D", "3D", "Corner", "Filled"}, 1)
+createSlider(vis.left, "Box Thickness", 1, 1, 5)
+createSlider(vis.left, "Name Size", 12, 8, 24)
+createSlider(vis.left, "ESP Fade Distance", 500, 100, 2000)
+
+createSection(vis.left, "CHAMS")
+createCheckbox(vis.left, "Chams Enabled", false)
+createCheckbox(vis.left, "Chams ThirdPerson", false)
+createCheckbox(vis.left, "Chams Visible Only", false)
+createDropdown(vis.left, "Chams Style", {"Solid", "Wireframe", "Glow", "Outline", "Flat"}, 1)
+createDropdown(vis.left, "Chams Color", {"Red", "Green", "Blue", "Team", "Enemy"}, 1)
+createSlider(vis.left, "Chams Transparency", 50, 0, 100)
+
+createSection(vis.left, "EFFECTS")
+createCheckbox(vis.left, "Hit Marker", false)
+createCheckbox(vis.left, "Damage Indicator", false)
+createCheckbox(vis.left, "Kill Effect", false)
+createCheckbox(vis.left, "Bullet Tracer", false)
+createCheckbox(vis.left, "Impact Markers", false)
+createDropdown(vis.left, "Hit Marker Style", {"Cross", "X", "Dot", "Circle"}, 1)
+
+createSection(vis.right, "WORLD")
+createCheckbox(vis.right, "Night Mode", false)
+createCheckbox(vis.right, "Full Bright", false)
+createSlider(vis.right, "Brightness", 3, 0, 10)
+createCheckbox(vis.right, "No Fog", false)
+createCheckbox(vis.right, "No Grass", false)
+createCheckbox(vis.right, "No Particles", false)
+createCheckbox(vis.right, "Remove Skybox", false)
+createCheckbox(vis.right, "Remove Scope", false)
+createCheckbox(vis.right, "Remove Flashbang", false)
+
+createSection(vis.right, "VIEWMODEL")
+createCheckbox(vis.right, "Viewmodel Offset", false)
+createSlider(vis.right, "Viewmodel X", 0, -10, 10)
+createSlider(vis.right, "Viewmodel Y", 0, -10, 10)
+createSlider(vis.right, "Viewmodel Z", 0, -10, 10)
+createCheckbox(vis.right, "Custom FOV", false)
+createSlider(vis.right, "Camera FOV", 70, 40, 120)
+
+createSection(vis.right, "OVERLAY")
+createCheckbox(vis.right, "Watermark", true)
+createCheckbox(vis.right, "FPS Counter", false)
+createCheckbox(vis.right, "Ping Counter", false)
+createCheckbox(vis.right, "Time Display", false)
+createCheckbox(vis.right, "Speed Indicator", false)
+createCheckbox(vis.right, "Keybind List", false)
+createDropdown(vis.right, "Watermark Position", {"Top Left", "Top Right", "Bottom Left", "Bottom Right"}, 2)
+
+createSection(vis.right, "REMOVALS")
+createCheckbox(vis.right, "Remove Blood", false)
+createCheckbox(vis.right, "Remove Decals", false)
+createCheckbox(vis.right, "Remove Ragdolls", false)
+createCheckbox(vis.right, "Remove Foliage", false)
+createSlider(vis.right, "Max Render Distance", 1000, 100, 5000)
+
+
+local misc = Tabs["MISC"]
+
+createSection(misc.left, "MOVEMENT")
+createCheckbox(misc.left, "Bunny Hop", false)
+createCheckbox(misc.left, "Auto Strafe", false)
+createCheckbox(misc.left, "Strafe Assist", false)
+createCheckbox(misc.left, "Fast Ladder", false)
+createCheckbox(misc.left, "Edge Jump", false)
+createCheckbox(misc.left, "Auto Jump", false)
+createSlider(misc.left, "Jump Delay", 0, 0, 500)
+createDropdown(misc.left, "Strafe Mode", {"Legit", "Rage", "Optimal"}, 1)
+
+createSection(misc.left, "AUTO")
+createCheckbox(misc.left, "Auto Defuse", false)
+createCheckbox(misc.left, "Auto Reload", false)
+createCheckbox(misc.left, "Auto Buy", false)
+createCheckbox(misc.left, "Auto Peek", false)
+createCheckbox(misc.left, "Quick Stop", false)
+createCheckbox(misc.left, "Auto Revive", false)
+
+createSection(misc.left, "FAKE LAG")
+createCheckbox(misc.left, "Fake Lag", false)
+createSlider(misc.left, "Fake Lag Amount", 100, 0, 1000)
+createSlider(misc.left, "Fake Lag Jitter", 20, 0, 100)
+createCheckbox(misc.left, "Fake Lag On Peek", false)
+createCheckbox(misc.left, "Fake Lag On Shot", false)
+
+createSection(misc.left, "DESYNC")
+createCheckbox(misc.left, "Desync", false)
+createSlider(misc.left, "Desync Amount", 50, 0, 100)
+createDropdown(misc.left, "Desync Mode", {"Static", "Dynamic", "Adaptive"}, 1)
+createSlider(misc.left, "Choke Amount", 10, 0, 50)
+
+createSection(misc.right, "MISC")
+createCheckbox(misc.right, "Anti AFK", true)
+createCheckbox(misc.right, "Chat Spam", false)
+createSlider(misc.right, "Spam Delay", 1000, 100, 5000)
+createDropdown(misc.right, "Spam Type", {"Random", "Custom"}, 1)
+createCheckbox(misc.right, "Auto Accept Match", false)
+createCheckbox(misc.right, "Auto Reconnect", false)
+
+createSection(misc.right, "EXPLOITS")
+createCheckbox(misc.right, "Fly", false)
+createSlider(misc.right, "Fly Speed", 50, 10, 200)
+createCheckbox(misc.right, "Noclip", false)
+createCheckbox(misc.right, "Infinite Jump", false)
+createCheckbox(misc.right, "No Fall Damage", false)
+createCheckbox(misc.right, "Speed Hack", false)
+createSlider(misc.right, "Speed Multiplier", 16, 16, 100)
+
+createSection(misc.right, "WORLD")
+createCheckbox(misc.right, "Full Bright", false)
+createSlider(misc.right, "Brightness", 3, 0, 10)
+createCheckbox(misc.right, "No Fog", false)
+createCheckbox(misc.right, "No Grass", false)
+createCheckbox(misc.right, "No Particles", false)
+createCheckbox(misc.right, "Remove Skybox", false)
+createCheckbox(misc.right, "Custom FOV", false)
+createSlider(misc.right, "Camera FOV", 70, 40, 120)
+
+createSection(misc.right, "SOUND")
+createCheckbox(misc.right, "Kill Sound", false)
+createSlider(misc.right, "Kill Sound Volume", 50, 0, 100)
+createCheckbox(misc.right, "Hit Sound", false)
+createSlider(misc.right, "Hit Sound Volume", 50, 0, 100)
+createCheckbox(misc.right, "Mute Game Sounds", false)
+createCheckbox(misc.right, "Footsteps Enhanced", false)
+
+createSection(misc.right, "PROTECTION")
+createCheckbox(misc.right, "Anti Flash", false)
+createCheckbox(misc.right, "Anti Smoke", false)
+createCheckbox(misc.right, "Anti Screen Shake", false)
+createCheckbox(misc.right, "Anti Freeze", false)
+createCheckbox(misc.right, "Anti AFK Kick", true)
+
+
+local cfg = Tabs["CONFIG"]
+
+createSection(cfg.left, "CONFIG")
+createCheckbox(cfg.left, "Auto Save", true)
+createCheckbox(cfg.left, "Auto Load on Start", true)
+createDropdown(cfg.left, "Config Slot", {"Default", "Slot 1", "Slot 2", "Slot 3"}, 1)
+
+
+local nameRow = Instance.new("Frame")
+nameRow.Size = UDim2.new(1, 0, 0, 22)
+nameRow.BackgroundTransparency = 1
+nameRow.ZIndex = 5
+nameRow.Parent = cfg.left
+
+local nameLabel = Instance.new("TextLabel")
+nameLabel.Text = "Config Name"
+nameLabel.Font = Enum.Font.Gotham
+nameLabel.TextSize = 12
+nameLabel.TextColor3 = TEXT
+nameLabel.BackgroundTransparency = 1
+nameLabel.Size = UDim2.new(1, -100, 1, 0)
+nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+nameLabel.ZIndex = 6
+nameLabel.Parent = nameRow
+
+local nameInput = Instance.new("TextBox")
+nameInput.Size = UDim2.new(0, 90, 0, 20)
+nameInput.Position = UDim2.new(1, -90, 0.5, -10)
+nameInput.BackgroundColor3 = Color3.fromRGB(20, 20, 22)
+nameInput.BorderSizePixel = 0
+nameInput.Text = "default"
+nameInput.Font = Enum.Font.Gotham
+nameInput.TextSize = 11
+nameInput.TextColor3 = TEXT
+nameInput.PlaceholderText = "config name"
+nameInput.PlaceholderColor3 = TEXT_DIM
+nameInput.ZIndex = 6
+nameInput.ClearTextOnFocus = false
+nameInput.Parent = nameRow
+
+local nameInputStroke = Instance.new("UIStroke")
+nameInputStroke.Color = Color3.fromRGB(45, 45, 50)
+nameInputStroke.Thickness = 1
+nameInputStroke.Parent = nameInput
+
+
+createSection(cfg.left, "ACTIONS")
+
+local function createButton(parent, text, accent)
+	local btn = Instance.new("TextButton")
+	btn.Size = UDim2.new(1, 0, 0, 24)
+	btn.BackgroundColor3 = Color3.fromRGB(20, 20, 22)
+	btn.BorderSizePixel = 0
+	btn.Text = text
+	btn.Font = Enum.Font.GothamMedium
+	btn.TextSize = 11
+	btn.TextColor3 = TEXT
+	btn.AutoButtonColor = false
+	btn.ZIndex = 6
+	btn.Parent = parent
+
+	local btnStroke = Instance.new("UIStroke")
+	btnStroke.Color = Color3.fromRGB(45, 45, 50)
+	btnStroke.Thickness = 1
+	btnStroke.Parent = btn
+
+	btn.MouseEnter:Connect(function()
+		TweenService:Create(btn, TweenInfo.new(0.15), {
+			BackgroundColor3 = accent and ACCENT or Color3.fromRGB(30, 30, 35)
+		}):Play()
+		btnStroke.Color = accent and ACCENT or Color3.fromRGB(80, 80, 90)
+	end)
+	btn.MouseLeave:Connect(function()
+		TweenService:Create(btn, TweenInfo.new(0.15), {
+			BackgroundColor3 = Color3.fromRGB(20, 20, 22)
+		}):Play()
+		btnStroke.Color = Color3.fromRGB(45, 45, 50)
+	end)
+
+	return btn
+end
+
+createButton(cfg.left, "SAVE CONFIG", true)
+createButton(cfg.left, "LOAD CONFIG", false)
+createButton(cfg.left, "RESET CONFIG", false)
+createButton(cfg.left, "DELETE CONFIG", false)
+
+
+createSection(cfg.right, "ACCENT COLOR")
+
+local colorRow = Instance.new("Frame")
+colorRow.Name = "ColorRow"
+colorRow.Size = UDim2.new(1, 0, 0, 30)
+colorRow.BackgroundTransparency = 1
+colorRow.ZIndex = 5
+colorRow.Parent = cfg.right
+
+local colorLayout = Instance.new("UIListLayout")
+colorLayout.FillDirection = Enum.FillDirection.Horizontal
+colorLayout.Padding = UDim.new(0, 6)
+colorLayout.SortOrder = Enum.SortOrder.LayoutOrder
+colorLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+colorLayout.Parent = colorRow
+
+local COLORS = {
+	{name = "Red",     color = Color3.fromRGB(230, 60, 80)},
+	{name = "Orange",  color = Color3.fromRGB(240, 130, 50)},
+	{name = "Yellow",  color = Color3.fromRGB(230, 200, 60)},
+	{name = "Green",   color = Color3.fromRGB(80, 200, 100)},
+	{name = "Cyan",    color = Color3.fromRGB(60, 200, 220)},
+	{name = "Blue",    color = Color3.fromRGB(70, 130, 240)},
+	{name = "Purple",  color = Color3.fromRGB(150, 90, 230)},
+	{name = "Pink",    color = Color3.fromRGB(230, 90, 180)},
+}
+
+for _, c in ipairs(COLORS) do
+	local swatch = Instance.new("TextButton")
+	swatch.Size = UDim2.new(0, 22, 0, 22)
+	swatch.BackgroundColor3 = c.color
+	swatch.BorderSizePixel = 0
+	swatch.Text = ""
+	swatch.AutoButtonColor = false
+	swatch.ZIndex = 6
+	swatch.Parent = colorRow
+
+	local swatchStroke = Instance.new("UIStroke")
+	swatchStroke.Color = Color3.fromRGB(50, 50, 55)
+	swatchStroke.Thickness = 1
+	swatchStroke.Parent = swatch
+
+	swatch.MouseEnter:Connect(function()
+		swatchStroke.Color = Color3.fromRGB(150, 150, 160)
+	end)
+	swatch.MouseLeave:Connect(function()
+		swatchStroke.Color = Color3.fromRGB(50, 50, 55)
+	end)
+
+	swatch.MouseButton1Click:Connect(function()
+		ACCENT = c.color
+		mainStroke.Color = ACCENT
+		headerLine.BackgroundColor3 = ACCENT
+		accentLetter.TextColor3 = ACCENT
+		watermarkStroke.Color = ACCENT
+		wmAccent.BackgroundColor3 = ACCENT
+		wmTime.TextColor3 = ACCENT
+		for _, tab in pairs(Tabs) do
+			tab.underline.BackgroundColor3 = ACCENT
+		end
+	end)
+end
+
+
+createSection(cfg.right, "INFO")
+
+local infoLabel = Instance.new("TextLabel")
+infoLabel.Text = "FatalityUI v1.0\nUI only — no cheat features"
+infoLabel.Font = Enum.Font.Gotham
+infoLabel.TextSize = 11
+infoLabel.TextColor3 = TEXT_DIM
+infoLabel.BackgroundTransparency = 1
+infoLabel.Size = UDim2.new(1, 0, 0, 40)
+infoLabel.TextXAlignment = Enum.TextXAlignment.Left
+infoLabel.TextYAlignment = Enum.TextYAlignment.Top
+infoLabel.TextWrapped = true
+infoLabel.ZIndex = 6
+infoLabel.Parent = cfg.right
+
+
+local toggleKey = Enum.KeyCode.RightShift
+local opened = true
+
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+	if gameProcessed then return end
+	if input.KeyCode == toggleKey then
+		closeAllPopups()
+		opened = not opened
+		if opened then
+			main.Visible = true
+			blur.Enabled = true
+			main.Size = UDim2.new(0, 660, 0, 0)
+			TweenService:Create(main, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+				Size = UDim2.new(0, 660, 0, 440)
+			}):Play()
+		else
+			local tween = TweenService:Create(main, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+				Size = UDim2.new(0, 660, 0, 0)
+			})
+			tween:Play()
+			tween.Completed:Connect(function()
+				main.Visible = false
+				blur.Enabled = false
+			end)
+		end
+	end
+end)
+
+
+local hint = Instance.new("TextLabel")
+hint.Text = "[RightShift] - открыть меню"
+hint.Font = Enum.Font.GothamMedium
+hint.TextSize = 12
+hint.TextColor3 = Color3.fromRGB(180, 180, 200)
+hint.BackgroundTransparency = 1
+hint.Position = UDim2.new(0, 12, 0, 8)
+hint.Size = UDim2.new(0, 220, 0, 20)
+hint.TextXAlignment = Enum.TextXAlignment.Left
+hint.ZIndex = 5
+hint.Parent = gui
+
+local watermark = Instance.new("Frame")
+watermark.Name = "Watermark"
+watermark.Size = UDim2.new(0, 200, 0, 22)
+watermark.Position = UDim2.new(1, -210, 0, 10)
+watermark.BackgroundColor3 = HEADER_BG
+watermark.BackgroundTransparency = 0.1
+watermark.BorderSizePixel = 0
+watermark.ZIndex = 100
+watermark.Parent = gui
+
+local watermarkStroke = Instance.new("UIStroke")
+watermarkStroke.Color = ACCENT
+watermarkStroke.Thickness = 1
+watermarkStroke.Transparency = 0.4
+watermarkStroke.Parent = watermark
+
+
+local wmAccent = Instance.new("Frame")
+wmAccent.Size = UDim2.new(0, 3, 1, 0)
+wmAccent.Position = UDim2.new(0, 0, 0, 0)
+wmAccent.BackgroundColor3 = ACCENT
+wmAccent.BorderSizePixel = 0
+wmAccent.ZIndex = 101
+wmAccent.Parent = watermark
+
+
+local wmTitle = Instance.new("TextLabel")
+wmTitle.Text = "FATALITY"
+wmTitle.Font = Enum.Font.GothamBold
+wmTitle.TextSize = 11
+wmTitle.TextColor3 = TEXT
+wmTitle.BackgroundTransparency = 1
+wmTitle.Size = UDim2.new(0, 80, 1, 0)
+wmTitle.Position = UDim2.new(0, 10, 0, 0)
+wmTitle.TextXAlignment = Enum.TextXAlignment.Left
+wmTitle.ZIndex = 101
+wmTitle.Parent = watermark
+
+
+local wmDivider = Instance.new("Frame")
+wmDivider.Size = UDim2.new(0, 1, 0, 12)
+wmDivider.Position = UDim2.new(0, 90, 0.5, -6)
+wmDivider.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
+wmDivider.BorderSizePixel = 0
+wmDivider.ZIndex = 101
+wmDivider.Parent = watermark
+
+
+local wmFPS = Instance.new("TextLabel")
+wmFPS.Text = "60 FPS"
+wmFPS.Font = Enum.Font.Gotham
+wmFPS.TextSize = 11
+wmFPS.TextColor3 = TEXT_DIM
+wmFPS.BackgroundTransparency = 1
+wmFPS.Size = UDim2.new(0, 60, 1, 0)
+wmFPS.Position = UDim2.new(0, 98, 0, 0)
+wmFPS.TextXAlignment = Enum.TextXAlignment.Left
+wmFPS.ZIndex = 101
+wmFPS.Parent = watermark
+
+
+local wmTime = Instance.new("TextLabel")
+wmTime.Text = "00:00"
+wmTime.Font = Enum.Font.Gotham
+wmTime.TextSize = 11
+wmTime.TextColor3 = ACCENT
+wmTime.BackgroundTransparency = 1
+wmTime.Size = UDim2.new(0, 50, 1, 0)
+wmTime.Position = UDim2.new(1, -55, 0, 0)
+wmTime.TextXAlignment = Enum.TextXAlignment.Right
+wmTime.ZIndex = 101
+wmTime.Parent = watermark
+
+
+task.spawn(function()
+	while watermark.Parent do
+		local t = os.date("*t")
+		wmTime.Text = string.format("%02d:%02d", t.hour, t.min)
+		task.wait(1)
+	end
+end)
+
+
+task.spawn(function()
+	local frames = 0
+	local lastTime = tick()
+	game:GetService("RunService").RenderStepped:Connect(function()
+		frames = frames + 1
+		if tick() - lastTime >= 1 then
+			wmFPS.Text = tostring(frames) .. " FPS"
+			frames = 0
+			lastTime = tick()
+		end
+	end)
+end)
