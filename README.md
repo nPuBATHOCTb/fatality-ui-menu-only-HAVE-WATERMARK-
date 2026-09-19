@@ -1,5 +1,5 @@
 
-**Шаг 5. Добавь русский README.** Создай файл `README.ru.md`:
+
 
 ```markdown
 # FatalityUI
